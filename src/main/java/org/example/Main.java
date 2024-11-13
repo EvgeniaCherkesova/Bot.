@@ -7,17 +7,19 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import java.util.Properties;
-
+@Slf4j
 public class Main {
     public static void main(String[] args) {
         Properties log4jProp = new Properties();
         log4jProp.setProperty("log4j.rootLogger", "WARN");
         PropertyConfigurator.configure(log4jProp);
+
         try {
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
             telegramBotsApi.registerBot(new Bot());
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+
     }
 }
