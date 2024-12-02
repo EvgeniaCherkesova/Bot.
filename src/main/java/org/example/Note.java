@@ -5,11 +5,11 @@ import lombok.AllArgsConstructor;
 
 import java.sql.Date;
 import java.sql.Time;
+import java.time.LocalDateTime;
 
 
 public class Note {
-    public Date date;
-    public Time time;
+    public LocalDateTime dateTime;
     public String note;
 
 }

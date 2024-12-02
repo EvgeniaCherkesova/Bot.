@@ -11,16 +11,20 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.time.LocalDateTime;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 @Getter
 @Setter
 @Slf4j
 public class Bot extends TelegramLongPollingBot {
     final private String BOT_TOKEN = "8029386665:AAFwHizKwSdMz-Q1vcdcmlkEDqnJHd9ZQmo";
     final private String BOT_NAME = "@FunnyHumoristBot";
-    Storage storage;
+    private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     Bot(){
-        storage = new Storage();
     }
     @Override
     public String getBotUsername() {
@@ -38,7 +42,7 @@ public class Bot extends TelegramLongPollingBot {
             if(update.hasMessage() && update.getMessage().hasText()){
                 Message getMes = update.getMessage();
                 String chatID = getMes.getChatId().toString();
-                SendMessage outMes = handlerMessage(getMes.getText());
+                SendMessage outMes = MessagesHandler.create().handlerMessage(getMes.getText());
                 outMes.setChatId(chatID);
                 execute(outMes);
             } else if (update.hasCallbackQuery()) {
@@ -49,10 +53,6 @@ public class Bot extends TelegramLongPollingBot {
                 if (callBack.equals("создать заметку")){
                     message.setText("введите текст заметки начиная с /text");
                 }
-                else if (callBack.equals("по умолчанию")){
-                    message.setText("заметка создана");
-                    message.setReplyMarkup(KeyBoards.setNote());
-                }
                 message.setChatId(chatID);
                 execute(message);
             }
@@ -61,31 +61,18 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    public SendMessage handlerMessage(String text){
-        SendMessage message = new SendMessage();
-        InlineKeyboardMarkup keyBoard;
-        String response = "";
-        if(text.equals("/start") || text.equals("/старт")){
-            response = "Вас приветствует бот-хранитель ваших заметок";
-            keyBoard = KeyBoards.setNote();
-            message.setReplyMarkup(keyBoard);
+    private void scheduleMessage(long chatId, String message, LocalDateTime dateTime) {
+        long delay = calculateDelay(dateTime);
+        if (delay >= 0) {
+            executorService.schedule(() -> sendResponse(chatId, message), delay, TimeUnit.MILLISECONDS);
+        } else {
+            sendResponse(chatId, "Вы уже пропустили это время.");
         }
-
-        else if (text.startsWith("/text")){
-            response = "введите дату напоминания начиная с /date";
-        }
-
-        else if (text.startsWith("/date")){
-            response = "Введите время начиная с /time. По умолчанию время 10:00";
-            keyBoard = KeyBoards.defaultButton();
-            message.setReplyMarkup(keyBoard);
-        }
-        else {
-            response = "сообщение не распознано";
-            keyBoard = null;
-        }
-
-        message.setText(response);
-        return message;
     }
+
+    private long calculateDelay(LocalDateTime dateTime) {
+        LocalDateTime now = LocalDateTime.now();
+        return java.time.Duration.between(now, dateTime).toMillis();
+    }
+
 }
