@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +24,8 @@ public class Bot extends TelegramLongPollingBot {
     final private String BOT_TOKEN = "8029386665:AAFwHizKwSdMz-Q1vcdcmlkEDqnJHd9ZQmo";
     final private String BOT_NAME = "@FunnyHumoristBot";
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+    private String textNote = null;
+    private LocalDateTime date = null;
 
     Bot(){
     }
@@ -42,9 +45,31 @@ public class Bot extends TelegramLongPollingBot {
             if(update.hasMessage() && update.getMessage().hasText()){
                 Message getMes = update.getMessage();
                 String chatID = getMes.getChatId().toString();
-                SendMessage outMes = MessagesHandler.create().handlerMessage(getMes.getText());
-                outMes.setChatId(chatID);
-                execute(outMes);
+                SendMessage message = new SendMessage();
+                String text = getMes.getText();
+                InlineKeyboardMarkup keyBoard;
+                if (text.equals("/start") || text.equals("/старт")) {
+                    message.setText("Вас приветствует бот-хранитель ваших заметок");
+                    keyBoard = KeyBoards.setNote();
+                    message.setReplyMarkup(keyBoard);
+                } else if (text.startsWith("/text")) {
+                    this.textNote = text.replace ("/text", "");
+                    message.setText("введите дату и время напоминания в формате dd.mm.yyyy hh:mm начиная с /date");
+                } else if (text.startsWith("/date")) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+                    this.date = LocalDateTime.parse(text.replace ("/date ", ""), formatter);
+                    message.setText("заметка создана");
+                } else {
+                    message.setText("сообщение не распознано");
+                }
+                message.setChatId(chatID);
+                execute(message);
+                if(textNote != null && date != null){
+                    scheduleMessage(chatID,textNote, date);
+                    textNote = null;
+                    date = null;
+                    System.out.println("заметка отпр");
+                }
             } else if (update.hasCallbackQuery()) {
                 String chatID = update.getCallbackQuery().getMessage().getChatId().toString();
                 String callBack = update.getCallbackQuery().getData();
@@ -61,12 +86,12 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    private void scheduleMessage(long chatId, String message, LocalDateTime dateTime) {
+    public void scheduleMessage(String chatId, String message, LocalDateTime dateTime) {
         long delay = calculateDelay(dateTime);
         if (delay >= 0) {
             executorService.schedule(() -> sendResponse(chatId, message), delay, TimeUnit.MILLISECONDS);
         } else {
-            sendResponse(chatId, "Вы уже пропустили это время.");
+            sendResponse(chatId, "Вы уже пропустили это время. Начните с начала");
         }
     }
 
@@ -75,4 +100,14 @@ public class Bot extends TelegramLongPollingBot {
         return java.time.Duration.between(now, dateTime).toMillis();
     }
 
+    private void sendResponse(String chatId, String message) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(message);
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }
