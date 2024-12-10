@@ -67,8 +67,7 @@ public class Bot extends TelegramLongPollingBot {
                 if(textNote != null && date != null){
                     scheduleMessage(chatID,textNote, date);
                     textNote = null;
-                    date = null;
-                    System.out.println("заметка отпр");
+                    date = null;    
                 }
             } else if (update.hasCallbackQuery()) {
                 String chatID = update.getCallbackQuery().getMessage().getChatId().toString();
