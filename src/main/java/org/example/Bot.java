@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
 @Setter
 @Slf4j
 public class Bot extends TelegramLongPollingBot {
-    final private String BOT_TOKEN = "8029386665:AAFwHizKwSdMz-Q1vcdcmlkEDqnJHd9ZQmo";
-    final private String BOT_NAME = "@FunnyHumoristBot";
+    final private String BOT_TOKEN = "8090487613:AAF-PaoAj1VaazRVLEHgB8cg30_Pj0E0HIs";
+    final private String BOT_NAME = "@notesStorageBot";
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
     private String textNote = null;
     private LocalDateTime date = null;
